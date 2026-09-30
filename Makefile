@@ -3,11 +3,14 @@
 # Galaxy pulls the old published image from the registry instead of using the
 # image you just built locally.
 docker_name=gtn-gxit
-docker_repo=neoformit
+docker_repo=paulzierep
 # Must match <port> in interactivetool_tabulator.xml and ARG PORT in the Dockerfile
 internal_port=8765
-# Host port : container port. The container listens on internal_port only.
-port=-p 127.0.0.1:3838:$(internal_port)
+# Host port : container port. The container only ever listens on
+# internal_port, so publishing that same port keeps one number for everything.
+# Change the host side (e.g. 3838:$(internal_port)) if it clashes with
+# something already running locally, or to run two instances side by side.
+port=-p 127.0.0.1:$(internal_port):$(internal_port)
 WEB_TAG=1.0.0
 WEB_TARGET=${docker_repo}/${docker_name}:${WEB_TAG}
 WEB_LATEST=${docker_repo}/${docker_name}:latest

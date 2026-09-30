@@ -15,31 +15,17 @@ Requirement
  - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
  - [docker](https://docs.docker.com/engine/install/)
 
-Ports
------
-
-| what | port |
-|------|------|
-| container (Shiny app) | `8765` |
-| host, for `make it` / `make d` | `3838` |
-| Galaxy | whatever port it runs on |
-
-`8765` appears in three places that must stay in sync: `ARG PORT` in the
-`Dockerfile`, `internal_port` in the `Makefile`, and `<port>` in
-`interactivetool_tabulator.xml`. Galaxy maps the XML `<port>` onto the container,
-so the app has to listen on exactly that port.
-
 Build and test
 --------------
 
 ```bash
 git clone https://github.com/paulzierep/geoc-gxit.git
 cd geoc-gxit
-make docker      # builds and tags neoformit/gtn-gxit:latest
+make docker      # builds and tags paulzierep/gtn-gxit:latest
 make it          # runs it in the foreground
 ```
 
-Then go to <http://127.0.0.1:3838>.
+Then go to <http://127.0.0.1:8765>.
 
 ```bash
 make log         # follow the app output while it runs
@@ -51,7 +37,7 @@ make clean       # kill containers, remove the image
 Use with Galaxy / planemo
 -------------------------
 
-The tool XML expects the image `neoformit/gtn-gxit:latest`, which is exactly
+The tool XML expects the image `paulzierep/gtn-gxit:latest`, which is exactly
 what `make docker` produces. If you change the image name in one place, change
 it in all three (`Makefile`, `Dockerfile`, tool XML), or Galaxy will silently
 pull a different image from the registry.
@@ -60,30 +46,14 @@ Serve the tool with planemo:
 
 ```bash
 planemo serve interactivetool_tabulator.xml \
-  --galaxy_root ~/git/galaxy \
-  --port 9090 \
-  --job_workers 4 \
   --biocontainers
 ```
 
-Two things worth knowing:
-
-- **`--job_workers 4` is not optional.** planemo defaults to a single job worker,
-  and a running interactive tool holds its worker until the user stops it. With
-  one worker, every interactive tool started after the first one stays `queued`
-  and Galaxy shows *"No URL available for this interactive tool"* — which looks
-  like a broken tool but is only worker starvation.
 - **The first launch of any tool pulls its image.** While a multi-GB image is
   downloading the job is still queued and there is no entry point yet, so the UI
   shows the same *"No URL available"* message. Pre-pull with
   `docker pull <image>` if you want to tell a download apart from a real failure.
 
-The tool uses `requires_domain="True"`, so Galaxy gives each session its own
-hostname (`<id>.ep.interactivetool.<your-domain>`). That is what you want for
-Shiny, whose websocket connections do not survive a URL prefix. If you would
-rather have a plain path under the Galaxy host, set `requires_domain="False"`
-and let gx-it-proxy strip the prefix; the app then has to be reachable at the
-root of the container port.
 
 Why not shiny-server?
 ---------------------
@@ -111,12 +81,40 @@ Because the app now logs to stdout/stderr instead of a file, `make log` uses
 Deploy
 ------
 
-The image is published as `neoformit/gtn-gxit`. To push a new build:
+The image is published as [`paulzierep/gtn-gxit`](https://hub.docker.com/r/paulzierep/gtn-gxit). To push a new build, log in first and then:
+
+```bash
+docker login          # Docker Hub user name + an access token, not your account password
+make docker
+make push_hub USERNAME=paulzierep
+```
+
+Or push the tags built by `make docker` directly:
+
+```bash
+docker push paulzierep/gtn-gxit:latest
+docker push paulzierep/gtn-gxit:1.0.0
+```
+
+<details><summary>Unattended push via a .password file</summary>
+
+```bash
+printf '%s' '<your-access-token>' > .password
+make push_hub USERNAME=paulzierep
+rm -f .password
+```
+
+`.password` holds a secret and is listed in `.gitignore`.
+</details>
+
+<details><summary>Original upstream target</summary>
 
 ```bash
 make docker
 make push_hub USERNAME=<docker-hub-user>   # needs a .password file
 ```
+
+</details>
 
 Update
 ------
@@ -134,10 +132,3 @@ Run
  - `make sh` — connect to the container while it is running
  - `make log` — follow the app output while it is running
 
-Metadata
---------
-
- - **@name**: geoc-gxit
- - **@version**: 1.0.0
- - **@authors**: Lain Pavot · lain.pavot@inrae.fr · https://github.com/Lain-inrae
- - **@date creation**: 21/06/2021

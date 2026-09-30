@@ -1,7 +1,7 @@
 <tool id="interactive_tool_tabulator" tool_type="interactive" name="Tabulator" version="1.0.0">
     <description>Tuto tool for Gxit</description>
     <requirements>
-        <container type="docker">neoformit/gtn-gxit:latest</container>
+        <container type="docker">paulzierep/gtn-gxit:latest</container>
     </requirements>
     <entry_points>
         <entry_point name="first gxit" requires_domain="True">
