@@ -1,5 +1,5 @@
 # These must produce the image the tool XML asks for
-# (<container type="docker">neoformit/gtn-gxit:latest</container>), otherwise
+# (<container type="docker">paulzierep/gtn-gxit:latest</container>), otherwise
 # Galaxy pulls the old published image from the registry instead of using the
 # image you just built locally.
 docker_name=gtn-gxit
