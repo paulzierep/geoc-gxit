@@ -6,17 +6,19 @@
     <entry_points>
         <entry_point name="first gxit" requires_domain="True">
             <port>8765</port>
-            <url>/</url>
         </entry_point>
     </entry_points>
-    <command><![CDATA[
-        exec shiny-server 2>&1 > \${LOG_PATH}
-    ]]>
-    </command>
+    <!-- The app is started with shiny::runApp() instead of shiny-server, which
+         requires a fixed user (its mandatory `run_as` directive) and writes to
+         root-owned /var/log and /var/lib directories - neither of which works in
+         a container that Galaxy starts as an arbitrary uid.
+         The port below has to match <port> and ARG PORT in the Dockerfile. -->
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript -e "shiny::runApp('/srv/shiny-server', port = 8765, launch.browser = FALSE)"
+    ]]></command>
     <inputs>
     </inputs>
     <outputs>
-        <data name="file_output" format="txt" />
     </outputs>
     <tests>
     </tests>

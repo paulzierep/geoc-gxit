@@ -22,32 +22,20 @@ RUN \
 
 # ------------------------------------------------------------------------------
 
-# These default values can be overridden when we run the container:
-#     docker run -p 8080:8080 -e PORT=8080 -e LOG_PATH=/tmp/shiny/gxit.log <container_name>
-
-# We can also bind the container $LOG_PATH to a local directory in order to
-# follow the log file from the host machine as the container runs. This command
-# will create the log/ directory in our current working directory at runtime -
-# inside we will find our Shiny app log file:
-#     docker run -p 8888:8888 -e LOG_PATH=/tmp/shiny/gxit.log -v $PWD/log:/tmp/shiny <container_name>
-
+# The port the app listens on. It must match <port> in the tool XML, since
+# Galaxy maps that port on the container.
 ARG PORT=8765
-ARG LOG_PATH=/tmp/gxit.log
 
-ENV LOG_PATH=$LOG_PATH
 ENV PORT=$PORT
 
 # ------------------------------------------------------------------------------
 
-# Edit shiny-server config
-RUN cat /etc/shiny-server/shiny-server.conf \
-    | sed "s/3838/${PORT}/" > /etc/shiny-server/shiny-server.conf.1
-RUN mv /etc/shiny-server/shiny-server.conf.1 /etc/shiny-server/shiny-server.conf
-
-# ------------------------------------------------------------------------------
-
-RUN mkdir -p $(dirname "${LOG_PATH}")
 EXPOSE $PORT
 COPY ./gxit/app.R /srv/shiny-server/
 
-CMD ["/bin/sh", "-c", "shiny-server > ${LOG_PATH} 2>&1"]
+# Run the app with shiny::runApp() rather than shiny-server: shiny-server has a
+# mandatory `run_as` directive which forces the server to be started as a fixed
+# user, and it wants to write to root-owned /var/log and /var/lib directories.
+# runApp() is happy under any uid, which is what a container needs when it is
+# launched by different users (Galaxy runs containers as the job owner).
+CMD Rscript -e "shiny::runApp('/srv/shiny-server', host = '0.0.0.0', port = ${PORT}, launch.browser = FALSE)"

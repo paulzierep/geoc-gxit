@@ -1,8 +1,13 @@
-docker_name=first-gxit
-docker_repo=ancelete
-internal_port=3838
+# These must produce the image the tool XML asks for
+# (<container type="docker">neoformit/gtn-gxit:latest</container>), otherwise
+# Galaxy pulls the old published image from the registry instead of using the
+# image you just built locally.
+docker_name=gtn-gxit
+docker_repo=neoformit
+# Must match <port> in interactivetool_tabulator.xml and ARG PORT in the Dockerfile
+internal_port=8765
+# Host port : container port. The container listens on internal_port only.
 port=-p 127.0.0.1:3838:$(internal_port)
-log_path=/var/log/tuto-gxit-01.log
 WEB_TAG=1.0.0
 WEB_TARGET=${docker_repo}/${docker_name}:${WEB_TAG}
 WEB_LATEST=${docker_repo}/${docker_name}:latest
@@ -28,7 +33,7 @@ docker_logout:
 	docker logout
 
 docker:
-	@docker build --build-arg LOG_PATH=${log_path}  --build-arg PORT=${internal_port} -t $(docker_name) .
+	@docker build --build-arg PORT=${internal_port} -t $(docker_name) .
 	@docker tag ${docker_name}:latest ${WEB_TARGET}
 	@docker tag ${docker_name}:latest ${WEB_LATEST}
 
@@ -49,7 +54,7 @@ sh:
 	docker exec -i `docker ps | grep -Poe '^[a-z0-9]{12}'` bash
 
 log:
-	docker exec `docker ps | grep -Poe '^[a-z0-9]{12}'` tail -f $(log_path)
+	docker logs -f `docker ps -q --filter ancestor=$(docker_name) | head -1`
 
 
 .PHONY:log R
