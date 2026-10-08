@@ -14,7 +14,7 @@
          a container that Galaxy starts as an arbitrary uid.
          The port below has to match <port> and ARG PORT in the Dockerfile. -->
     <command detect_errors="exit_code"><![CDATA[
-        Rscript -e "shiny::runApp('/srv/shiny-server', port = 8765, launch.browser = FALSE)"
+        Rscript -e "shiny::runApp('/srv/shiny-server', host = '0.0.0.0', port = 8765, launch.browser = FALSE)"
     ]]></command>
     <inputs>
     </inputs>
